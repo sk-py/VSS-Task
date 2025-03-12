@@ -7,11 +7,12 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
-import {useForm, Controller} from 'react-hook-form';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useResponsive} from '../hooks/useResponsive';
-import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectEmailById, addEmail, updateEmail } from '../app/slices/mails';
+import { useResponsive } from '../hooks/useResponsive';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 
 interface EmailFormData {
   id: string;
@@ -30,11 +31,15 @@ type RouteParams = {
 };
 
 const CreateDraft = () => {
-  const {wp, hp} = useResponsive();
+  const { wp, hp } = useResponsive();
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const route = useRoute<RouteProp<RouteParams, 'CreateDraft'>>();
   const emailId = route.params?.emailId;
   const [isSentEmail, setIsSentEmail] = useState(false);
+
+  // Get email from Redux if editing
+  const existingEmail = emailId ? useSelector(selectEmailById(emailId)) : null;
 
   // Set navigation options
   useEffect(() => {
@@ -47,10 +52,10 @@ const CreateDraft = () => {
     });
   }, [navigation, emailId, isSentEmail]);
 
-  const {control, handleSubmit, setValue} = useForm<EmailFormData>({
+  const { control, handleSubmit, setValue } = useForm<EmailFormData>({
     defaultValues: {
       id: emailId || Date.now().toString(),
-      from: 'shaikh56742@gmail.com',
+      from: '',
       to: '',
       subject: '',
       body: '',
@@ -60,38 +65,19 @@ const CreateDraft = () => {
   });
 
   useEffect(() => {
-    const loadDraft = async () => {
-      if (emailId) {
-        try {
-          const emails = await AsyncStorage.getItem('emails');
-          if (emails) {
-            const parsedEmails = JSON.parse(emails);
-            const email = parsedEmails.find(
-              (d: EmailFormData) => d.id === emailId,
-            );
-            if (email) {
-              Object.keys(email).forEach(key => {
-                setValue(
-                  key as keyof EmailFormData,
-                  email[key as keyof EmailFormData],
-                );
-              });
-              setIsSentEmail(email.status === 'sent');
-            }
-          }
-        } catch (error) {
-          console.error('Error loading email:', error);
-        }
-      }
-    };
-    loadDraft();
-  }, [emailId, setValue]);
+    if (emailId && existingEmail) {
+      Object.keys(existingEmail).forEach(key => {
+        setValue(
+          key as keyof EmailFormData,
+          existingEmail[key as keyof EmailFormData],
+        );
+      });
+      setIsSentEmail(existingEmail.status === 'sent');
+    }
+  }, [emailId, existingEmail, setValue]);
 
   const saveEmail = async (data: EmailFormData, status: 'draft' | 'sent') => {
     try {
-      const emails = await AsyncStorage.getItem('emails');
-      const allEmails = emails ? JSON.parse(emails) : [];
-
       const updatedData = {
         ...data,
         status,
@@ -99,21 +85,11 @@ const CreateDraft = () => {
       };
 
       if (emailId) {
-        // Update existing email
-        const index = allEmails.findIndex(
-          (d: EmailFormData) => d.id === emailId,
-        );
-        if (index !== -1) {
-          allEmails[index] = updatedData;
-        } else {
-          allEmails.push(updatedData);
-        }
+        dispatch(updateEmail(updatedData));
       } else {
-        // Add new email
-        allEmails.push(updatedData);
+        dispatch(addEmail(updatedData));
       }
 
-      await AsyncStorage.setItem('emails', JSON.stringify(allEmails));
       navigation.goBack();
     } catch (error) {
       console.error('Error saving email:', error);
@@ -168,7 +144,7 @@ const CreateDraft = () => {
       shadowColor: 'grey',
       ...Platform.select({
         ios: {
-          shadowOffset: {width: 0, height: 1},
+          shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.1,
           shadowRadius: 2,
         },
@@ -198,7 +174,7 @@ const CreateDraft = () => {
       shadowColor: 'grey',
       ...Platform.select({
         ios: {
-          shadowOffset: {width: 0, height: -3},
+          shadowOffset: { width: 0, height: -3 },
           shadowOpacity: 0.1,
           shadowRadius: 3,
         },
@@ -217,7 +193,7 @@ const CreateDraft = () => {
       ...Platform.select({
         ios: {
           shadowColor: '#000',
-          shadowOffset: {width: 0, height: 2},
+          shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.2,
           shadowRadius: 2,
         },
@@ -253,7 +229,7 @@ const CreateDraft = () => {
   });
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}>
@@ -262,12 +238,26 @@ const CreateDraft = () => {
           <Controller
             control={control}
             name="from"
-            render={({field: {value}}) => (
-              <TextInput
-                style={[styles.input, styles.disabledInput]}
-                value={value}
-                editable={false}
-              />
+            rules={{ required: 'From is required' }}
+
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
+              <>
+                <TextInput
+                  style={[styles.input]}
+                  value={value}
+                  editable={!isSentEmail}
+                  onChangeText={onChange}
+                  placeholder="Enter sender's email"
+                  placeholderTextColor="#ADB5BD"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  autoFocus={true}
+                />
+                {error && !isSentEmail && (
+                  <Text style={styles.errorText}>{error.message}</Text>
+                )}
+              </>
             )}
           />
         </View>
@@ -277,13 +267,13 @@ const CreateDraft = () => {
           <Controller
             control={control}
             name="to"
-            rules={{required: 'Recipient email is required'}}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
+            rules={{ required: 'Recipient email is required' }}
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <>
                 <TextInput
                   style={[
                     styles.input,
-                    error && !isSentEmail && {borderColor: '#dc3545'},
+                    error && !isSentEmail && { borderColor: '#dc3545' },
                     isSentEmail && styles.disabledInput,
                   ]}
                   placeholder="Enter recipient's email"
@@ -307,13 +297,13 @@ const CreateDraft = () => {
           <Controller
             control={control}
             name="subject"
-            rules={{required: 'Subject is required'}}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
+            rules={{ required: 'Subject is required' }}
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <>
                 <TextInput
                   style={[
                     styles.input,
-                    error && !isSentEmail && {borderColor: '#dc3545'},
+                    error && !isSentEmail && { borderColor: '#dc3545' },
                     isSentEmail && styles.disabledInput,
                   ]}
                   placeholder="Enter subject"
@@ -330,12 +320,14 @@ const CreateDraft = () => {
           />
         </View>
 
+
+
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Message</Text>
           <Controller
             control={control}
             name="body"
-            render={({field: {onChange, value}}) => (
+            render={({ field: { onChange, value } }) => (
               <TextInput
                 style={[
                   styles.input,

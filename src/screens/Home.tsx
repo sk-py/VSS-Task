@@ -10,7 +10,9 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useDispatch, useSelector} from 'react-redux';
+import {selectEmailsByStatus, clearEmails} from '../app/slices/mails';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useResponsive} from '../hooks/useResponsive';
 import {SelectCountry as Dropdown} from 'react-native-element-dropdown';
 
@@ -51,14 +53,18 @@ const dropDownOptions = [
 
 const Home = ({navigation}: {navigation: any}) => {
   const {wp, hp} = useResponsive();
+  const dispatch = useDispatch();
 
   // State management
   const [selectedMailType, setSelectedMailType] = useState<
     'Draft Mails' | 'Sent Mails'
   >('Draft Mails');
   const [searchQuery, setSearchQuery] = useState('');
-  const [emails, setEmails] = useState<EmailItem[]>([]);
+  
+  // Get emails from Redux instead of local state
+  const emails = useSelector(selectEmailsByStatus(selectedMailType === 'Draft Mails' ? 'draft' : 'sent'));
 
+  /* Comment out AsyncStorage code
   // Load emails from AsyncStorage
   const loadEmails = async () => {
     try {
@@ -78,15 +84,15 @@ const Home = ({navigation}: {navigation: any}) => {
     });
     return unsubscribe;
   }, [navigation]);
+  */
 
   // Handle logout
   const handleLogout = async () => {
     try {
-      await AsyncStorage.clear();
+      // await AsyncStorage.clear();
+      dispatch(clearEmails());
       setSelectedMailType('Draft Mails');
       setSearchQuery('');
-      setEmails([]);
-    
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -102,16 +108,12 @@ const Home = ({navigation}: {navigation: any}) => {
     }
   };
 
-  // Filter emails based on selected type and search query
+  // Filter emails based on search query only (status filtering is done by selector)
   const filteredEmails = emails.filter(email => {
-    const matchesType =
-      selectedMailType === 'Draft Mails'
-        ? email.status === 'draft'
-        : email.status === 'sent';
     const matchesSearch =
       email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       email.to.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch;
+    return matchesSearch;
   });
 
   // Render individual email card

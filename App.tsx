@@ -4,14 +4,19 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './src/screens/Home';
 import CreateDraft from './src/screens/CreateDraft';
 import InitialScreen from './src/screens/InitialScreen';
+import { persistor, store } from './src/app/store';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator 
-        screenOptions={{ 
+    <PersistGate loading={null} persistor={persistor}>
+    <Provider store={store}>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
           headerShown: false,
           headerStyle: {
             backgroundColor: '#FFFFFF',
@@ -40,5 +45,7 @@ export default function App() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+    </Provider>
+    </PersistGate>
   );
 }
