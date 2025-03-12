@@ -11,8 +11,8 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="CreateDraft" component={CreateDraft} />
-        <Stack.Screen name="InitialScreen" component={InitialScreen} />
+        <Stack.Screen name="CreateDraft" component={CreateDraft} options={{ headerShown: true }} />
+        <Stack.Screen name="InitialScreen" component={InitialScreen} options={{ headerShown: true }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
