@@ -1,310 +1,350 @@
-import React, { useState } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    SafeAreaView,
-    TextInput,
-    FlatList,
-    StatusBar,
-    Platform,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  TextInput,
+  FlatList,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useResponsive } from '../hooks/useResponsive';
-import { SelectCountry as Dropdown } from 'react-native-element-dropdown';
+import {useResponsive} from '../hooks/useResponsive';
+import {SelectCountry as Dropdown} from 'react-native-element-dropdown';
 
 // Type definitions for our data structures
 interface EmailItem {
-    id: string;
-    title: string;
-    to: string;
-    preview: string;
-    timestamp: string;
-    type: 'draft' | 'sent';
+  id: string;
+  from: string;
+  to: string;
+  subject: string;
+  body: string;
+  timestamp: string;
+  status: 'draft' | 'sent';
 }
 
 const dropDownOptions = [
-    {
-        value: 'Draft Mails',
-        lable: 'Draft Mails',
-        image: {
-            uri: 'https://cdn4.iconfinder.com/data/icons/email-fill-02/512/34-Open_Letter-512.png',
-        },
+  {
+    value: 'Draft Mails',
+    lable: 'Draft Mails',
+    image: {
+      uri: 'https://cdn4.iconfinder.com/data/icons/email-fill-02/512/34-Open_Letter-512.png',
     },
-    {
-        value: 'Sent Mails',
-        lable: 'Sent Mails',
-        image: {
-            uri: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/high-10989861-9058071.png',
-        },
+  },
+  {
+    value: 'Sent Mails',
+    lable: 'Sent Mails',
+    image: {
+      uri: 'https://cdn-icons-png.flaticon.com/512/9195/9195557.png',
     },
-    {
-        value: 'Logout',
-        lable: 'Logout',
-        image: {
-            uri: 'https://cdn.iconscout.com/icon/premium/png-512-thumb/medium-10989899-9057958.png?f=webp&w=256',
-        },
+  },
+  {
+    value: 'Logout',
+    lable: 'Logout',
+    image: {
+      uri: 'https://www.clipartmax.com/png/middle/119-1198492_green-logout-icon-logout-icon-png-red.png',
     },
+  },
 ];
 
-const Home = ({ navigation }: { navigation: any }) => {
-    const { wp, hp } = useResponsive();
+const Home = ({navigation}: {navigation: any}) => {
+  const {wp, hp} = useResponsive();
 
-    // State management
-    const [selectedMailType, setSelectedMailType] = useState<'Draft Mails' | 'Sent Mails'>('Draft Mails');
-    const [searchQuery, setSearchQuery] = useState('');
+  // State management
+  const [selectedMailType, setSelectedMailType] = useState<
+    'Draft Mails' | 'Sent Mails'
+  >('Draft Mails');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [emails, setEmails] = useState<EmailItem[]>([]);
 
-    // Dummy data for demonstration
-    const emailData: EmailItem[] = [
-        {
-            id: '1',
-            title: 'Register a Trademark',
-            to: 'Daniel Santos',
-            preview: 'Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-            timestamp: '4:45pm',
-            type: 'draft'
-        },
-        {
-            id: '2',
-            title: 'Provisional Patent Filling',
-            to: 'Gary White',
-            preview: 'Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-            timestamp: '1:15pm',
-            type: 'draft'
-        },
-        {
-            id: '3',
-            title: 'Employment Contract Review',
-            to: 'Harry Kim',
-            preview: 'Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-            timestamp: '11:28am',
-            type: 'sent'
-        },
-        {
-            id: '4',
-            title: 'H-1B Application Services',
-            to: 'Brenda Thompson',
-            preview: 'Lorem ipsum dolor sit amet, consectetur lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-            timestamp: '10:30am',
-            type: 'sent'
-        }
-    ];
+  // Load emails from AsyncStorage
+  const loadEmails = async () => {
+    try {
+      const storedEmails = await AsyncStorage.getItem('emails');
+      if (storedEmails) {
+        setEmails(JSON.parse(storedEmails));
+      }
+    } catch (error) {
+      console.error('Error loading emails:', error);
+    }
+  };
 
-    // Filter emails based on selected type and search query
-    const filteredEmails = emailData.filter(email => {
-        const matchesType = selectedMailType === 'Draft Mails' ? email.type === 'draft' : email.type === 'sent';
-        const matchesSearch = email.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            email.to.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesType && matchesSearch;
+  // Load emails on mount and when navigating back
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadEmails();
     });
+    return unsubscribe;
+  }, [navigation]);
 
-    // Handle logout
-    const handleLogout = async () => {
-        try {
-            await AsyncStorage.clear();
-        } catch (error) {
-            console.error('Error during logout:', error);
-        }
-    };
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.clear();
+      setSelectedMailType('Draft Mails');
+      setSearchQuery('');
+      setEmails([]);
+    
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
-    // Handle dropdown option selection
-    const handleOptionSelect = (option: any) => {
-        if (option.value === 'Logout') {
-            handleLogout();
-        } else {
-            setSelectedMailType(option.value);
-        }
-    };
+  // Handle dropdown option selection
+  const handleOptionSelect = (option: any) => {
+    if (option.value === 'Logout') {
+      setSelectedMailType(option.value);
+      handleLogout();
+    } else {
+      setSelectedMailType(option.value);
+    }
+  };
 
-    // Render individual email card
-    const renderEmailCard = ({ item }: { item: EmailItem }) => (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('CreateDraft', { emailId: item.id })}
-        >
-            <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.timestamp}>{item.timestamp}</Text>
-            </View>
-            <Text style={styles.to} numberOfLines={1}>{item.to}</Text>
-            <Text style={styles.preview} numberOfLines={3}>{item.preview}</Text>
-        </TouchableOpacity>
-    );
+  // Filter emails based on selected type and search query
+  const filteredEmails = emails.filter(email => {
+    const matchesType =
+      selectedMailType === 'Draft Mails'
+        ? email.status === 'draft'
+        : email.status === 'sent';
+    const matchesSearch =
+      email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.to.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
-    const styles = StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: '#F8F9FA',
-        },
-        header: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: wp(96),
-            marginHorizontal: wp(4),
-            paddingTop: hp(4),
-            backgroundColor: '#FFFFFF',
-        },
-        headerTitle: {
-            fontSize: wp(6),
-            fontWeight: '600',
-            color: '#000000',
-        },
-        dropdown: {
-            height: hp(5),
-            width: wp(40),
-            backgroundColor: '#dbdbdb47',
-            borderRadius: wp(4),
-            paddingHorizontal: wp(2),
-            marginRight:wp(2)
-        },
-        imageStyle: {
-            width: wp(4.5),
-            height: wp(4.5),
-            borderRadius: wp(1),
-            marginLeft: wp(0.5),
-        },
-        placeholderStyle: {
-            fontSize: wp(4),
-            marginLeft: wp(1.5),
-        },
-        selectedTextStyle: {
-            fontSize: wp(4),
-            marginLeft: wp(2),
-        },
-        iconStyle: {
-            width: wp(5),
-            height: wp(5),
-        },
-        searchContainer: {
-            paddingHorizontal: wp(5),
-            paddingVertical: hp(1.5),
-            backgroundColor: '#FFFFFF',
-        },
-        searchInput: {
-            backgroundColor: '#F5F5F5',
-            borderRadius: wp(2),
-            paddingHorizontal: wp(4),
-            paddingVertical: hp(1.5),
-            fontSize: wp(4),
-        },
-        listContainer: {
-            padding: wp(5),
-        },
-        card: {
-            backgroundColor: '#FFFFFF',
-            borderRadius: wp(3),
-            padding: wp(4),
-            marginBottom: hp(1.5),
-            elevation: 8,
-            shadowColor: 'lightgrey',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-        },
-        cardHeader: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: hp(0.8),
-        },
-        cardTitle: {
-            fontSize: wp(4.5),
-            fontWeight: '600',
-            color: '#000000',
-            flex: 1,
-        },
-        timestamp: {
-            fontSize: wp(3.5),
-            color: '#666666',
-            marginLeft: wp(2),
-        },
-        to: {
-            fontSize: wp(4),
-            color: '#666666',
-            marginBottom: hp(0.8),
-        },
-        preview: {
-            fontSize: wp(3.5),
-            color: '#999999',
-        },
-        fab: {
-            position: 'absolute',
-            right: wp(5),
-            bottom: hp(3),
-            width: wp(15),
-            height: wp(15),
-            borderRadius: wp(7.5),
-            backgroundColor: '#6A3DE8',
-            justifyContent: 'center',
-            alignItems: 'center',
-            elevation: 6,
-            shadowColor: 'grey',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-        },
-        fabIcon: {
-            fontSize: wp(8),
-            color: '#FFFFFF',
-            fontWeight: '300',
-        },
-    });
+  // Render individual email card
+  const renderEmailCard = ({item}: {item: EmailItem}) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('CreateDraft', {emailId: item.id})}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {item.subject}
+        </Text>
+        <Text style={styles.timestamp}>{item.timestamp}</Text>
+      </View>
+      <Text style={styles.to} numberOfLines={1}>
+        To: {item.to}
+      </Text>
+      <Text style={styles.preview} numberOfLines={2}>
+        {item.body}
+      </Text>
+    </TouchableOpacity>
+  );
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#F8F9FA',
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: wp(92),
+      marginHorizontal: wp(4),
+      paddingTop: hp(4),
+      backgroundColor: '#FFFFFF',
+    },
+    headerTitle: {
+      fontSize: wp(6),
+      fontWeight: '600',
+      color: '#000000',
+    },
+    dropdown: {
+      height: hp(5),
+      width: wp(40),
+      backgroundColor: '#F8F9FA',
+      borderRadius: wp(2),
+      paddingHorizontal: wp(2),
+      // marginRight: wp(1),
+      borderWidth: 1,
+      borderColor: '#E9ECEF',
+    },
+    imageStyle: {
+      width: wp(4.5),
+      height: wp(4.5),
+      borderRadius: wp(1),
+      marginLeft: wp(0.5),
+    },
+    placeholderStyle: {
+      fontSize: wp(4),
+      marginLeft: wp(1.5),
+      color: '#495057',
+    },
+    selectedTextStyle: {
+      fontSize: wp(4),
+      marginLeft: wp(2),
+      color: '#212529',
+    },
+    iconStyle: {
+      width: wp(5),
+      height: wp(5),
+    },
+    searchContainer: {
+      paddingHorizontal: wp(5),
+      paddingVertical: hp(1.5),
+      backgroundColor: '#FFFFFF',
+    },
+    searchInput: {
+      backgroundColor: '#F8F9FA',
+      borderRadius: wp(2),
+      paddingHorizontal: wp(4),
+      paddingVertical: Platform.OS === 'ios' ? hp(2) : hp(1.5),
+      fontSize: wp(4),
+      borderWidth: 1,
+      borderColor: '#E9ECEF',
+    },
+    listContainer: {
+      padding: wp(5),
+    },
+    card: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: wp(3),
+      padding: wp(4),
+      marginBottom: hp(1.5),
+      shadowColor: 'lightgrey',
+      ...Platform.select({
+        ios: {
+          shadowOffset: {width: 0, height: 2},
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 3,
+        },
+      }),
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: hp(0.8),
+    },
+    cardTitle: {
+      fontSize: wp(4.5),
+      fontWeight: '600',
+      color: '#212529',
+      flex: 1,
+    },
+    timestamp: {
+      fontSize: wp(3.5),
+      color: '#6C757D',
+      marginLeft: wp(2),
+    },
+    to: {
+      fontSize: wp(4),
+      color: '#495057',
+      marginBottom: hp(0.8),
+    },
+    preview: {
+      fontSize: wp(3.8),
+      color: '#6C757D',
+      lineHeight: wp(5),
+    },
+    fab: {
+      position: 'absolute',
+      right: wp(5),
+      bottom: hp(3),
+      width: wp(15),
+      height: wp(15),
+      borderRadius: wp(7.5),
+      backgroundColor: '#6A3DE8',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: 'grey',
+      ...Platform.select({
+        ios: {
+          shadowOffset: {width: 0, height: 2},
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+    },
+    fabIcon: {
+      fontSize: wp(8),
+      color: '#FFFFFF',
+      fontWeight: '300',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: hp(20),
+    },
+    emptyText: {
+      fontSize: wp(4.5),
+      color: '#6C757D',
+      textAlign: 'center',
+    },
+  });
 
-            {/* Header Section */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>{selectedMailType}</Text>
-                <Dropdown
-                    style={styles.dropdown}
-                    selectedTextStyle={styles.selectedTextStyle}
-                    placeholderStyle={styles.placeholderStyle}
-                    imageStyle={styles.imageStyle}
-                    iconStyle={styles.iconStyle}
-                    maxHeight={200}
-                    value={selectedMailType}
-                    data={dropDownOptions}
-                    valueField="value"
-                    labelField="lable"
-                    imageField="image"
-                    placeholder={selectedMailType}
-                    onChange={handleOptionSelect}
-                />
-            </View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search emails..."
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholderTextColor="#666"
-                />
-            </View>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{selectedMailType}</Text>
+        <Dropdown
+          style={styles.dropdown}
+          selectedTextStyle={styles.selectedTextStyle}
+          placeholderStyle={styles.placeholderStyle}
+          imageStyle={styles.imageStyle}
+          iconStyle={styles.iconStyle}
+          maxHeight={200}
+          value={selectedMailType}
+          data={dropDownOptions}
+          valueField="value"
+          labelField="lable"
+          imageField="image"
+          placeholder={selectedMailType}
+          onChange={handleOptionSelect}
+        />
+      </View>
 
-            {/* Email List */}
-            <FlatList
-                data={filteredEmails}
-                renderItem={renderEmailCard}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-            />
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search emails..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#6C757D"
+        />
+      </View>
 
-            {/* Floating Action Button */}
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => navigation.navigate('CreateDraft')}
-            >
-                <Text style={styles.fabIcon}>+</Text>
-            </TouchableOpacity>
-        </SafeAreaView>
-    );
+      {/* Email List */}
+      <FlatList
+        data={filteredEmails}
+        renderItem={renderEmailCard}
+        keyExtractor={item => item.id}
+        contentContainerStyle={[
+          styles.listContainer,
+          filteredEmails.length === 0 && styles.emptyContainer,
+        ]}
+        ListEmptyComponent={() => (
+          <Text style={styles.emptyText}>
+            No {selectedMailType.toLowerCase()} found
+          </Text>
+        )}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('CreateDraft')}
+        activeOpacity={0.8}>
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
 };
 
 export default Home;
