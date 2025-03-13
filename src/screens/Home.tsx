@@ -19,7 +19,6 @@ import {SelectCountry as Dropdown} from 'react-native-element-dropdown';
 // Type definitions for our data structures
 interface EmailItem {
   id: string;
-  from: string;
   to: string;
   subject: string;
   body: string;
@@ -64,35 +63,15 @@ const Home = ({navigation}: {navigation: any}) => {
   // Get emails from Redux instead of local state
   const emails = useSelector(selectEmailsByStatus(selectedMailType === 'Draft Mails' ? 'draft' : 'sent'));
 
-  /* Comment out AsyncStorage code
-  // Load emails from AsyncStorage
-  const loadEmails = async () => {
-    try {
-      const storedEmails = await AsyncStorage.getItem('emails');
-      if (storedEmails) {
-        setEmails(JSON.parse(storedEmails));
-      }
-    } catch (error) {
-      console.error('Error loading emails:', error);
-    }
-  };
-
-  // Load emails on mount and when navigating back
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadEmails();
-    });
-    return unsubscribe;
-  }, [navigation]);
-  */
-
+ 
   // Handle logout
   const handleLogout = async () => {
     try {
-      // await AsyncStorage.clear();
       dispatch(clearEmails());
-      setSelectedMailType('Draft Mails');
-      setSearchQuery('');
+      setTimeout(() => {
+        setSelectedMailType('Draft Mails');
+        setSearchQuery('');
+      }, 1);
     } catch (error) {
       console.error('Error during logout:', error);
     }

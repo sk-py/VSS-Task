@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
@@ -13,10 +15,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectEmailById, addEmail, updateEmail } from '../app/slices/mails';
 import { useResponsive } from '../hooks/useResponsive';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import Toast from 'react-native-simple-toast';
+
 
 interface EmailFormData {
   id: string;
-  from: string;
   to: string;
   subject: string;
   body: string;
@@ -37,6 +40,7 @@ const CreateDraft = () => {
   const route = useRoute<RouteProp<RouteParams, 'CreateDraft'>>();
   const emailId = route.params?.emailId;
   const [isSentEmail, setIsSentEmail] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // Get email from Redux if editing
   const existingEmail = emailId ? useSelector(selectEmailById(emailId)) : null;
@@ -55,7 +59,6 @@ const CreateDraft = () => {
   const { control, handleSubmit, setValue } = useForm<EmailFormData>({
     defaultValues: {
       id: emailId || Date.now().toString(),
-      from: '',
       to: '',
       subject: '',
       body: '',
@@ -102,16 +105,66 @@ const CreateDraft = () => {
 
   const onSend = async (data: EmailFormData) => {
     try {
-      console.log('Email data to send:', {
+      setIsSending(true);
+      const emailData = {
         ...data,
         status: 'sent',
         timestamp: new Date().toLocaleString().split(',')[0],
+      };
+
+      // Send email to API
+      const response = await fetch('https://foody-auth.vercel.app/api/email/mail/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
       });
 
-      // Save as sent email
+      // Checking if response is ok
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message;
+        } catch {
+          // As my server was sometimes returning text for unknown reasons instead of json
+          errorMessage = await response.text();
+        }
+        throw new Error(errorMessage || `Server responded with status: ${response.status}`);
+      }
+
+      let responseData;
+      try {
+        responseData = await response.json();
+        console.log('Response:', responseData);
+      } catch (parseError) {
+        console.log('Response was not JSON:', await response.text());
+      }
+
+      // Save as sent email only if API call was successful
       await saveEmail(data, 'sent');
+
+      // Show success message
+      Toast.show('Email sent successfully', Toast.LONG);
     } catch (error) {
-      console.error('Error processing send:', error);
+      // Handle different types of errors
+      if (error instanceof TypeError) {
+        // Network errors
+        Toast.show('Network Error: Please check your connection', Toast.LONG);
+      } else {
+        Toast.show(
+          error instanceof Error ? error.message : 'Failed to send email',
+          Toast.LONG
+        );
+      }
+      // console.error('Error processing send:', error);
+
+      // Keep the email as draft if sending failed
+      await saveEmail(data, 'draft');
+
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -233,34 +286,6 @@ const CreateDraft = () => {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}>
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>From</Text>
-          <Controller
-            control={control}
-            name="from"
-            rules={{ required: 'From is required' }}
-
-            render={({ field: { value, onChange }, fieldState: { error } }) => (
-              <>
-                <TextInput
-                  style={[styles.input]}
-                  value={value}
-                  editable={!isSentEmail}
-                  onChangeText={onChange}
-                  placeholder="Enter sender's email"
-                  placeholderTextColor="#ADB5BD"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                  autoFocus={true}
-                />
-                {error && !isSentEmail && (
-                  <Text style={styles.errorText}>{error.message}</Text>
-                )}
-              </>
-            )}
-          />
-        </View>
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>To</Text>
@@ -362,9 +387,13 @@ const CreateDraft = () => {
             style={[styles.button, styles.sendButton]}
             onPress={handleSubmit(onSend)}
             activeOpacity={0.8}>
-            <Text style={[styles.buttonText, styles.sendButtonText]}>
-              Send Email
-            </Text>
+            {isSending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={[styles.buttonText, styles.sendButtonText]}>
+                Send Email
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       )}
