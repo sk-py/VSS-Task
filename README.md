@@ -1,97 +1,122 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Basic Email Client App
 
-# Getting Started
+## 📌 Objective
+Develop a basic email client that allows users to:
+- View a list of email drafts.
+- Edit or create a new draft email.
+- Send emails using a third-party email API (e.g., SendGrid or a mock backend).
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 🚀 Implemented Features
+- **Home Screen:**
+  - Displays a list of saved draft emails.
+  - Shows email subject, recipient(s), and status (Draft/Sent).
+  - Dropdown to filter emails by type (Sent/Draft).
+  - Logout option in the dropdown.
+  - Button to create a new draft.
+  - **Search bar** to quickly find emails (Bonus feature).
+- **Email Editor Screen:**
+  - Single screen dynamically handles:
+    - Creating a new draft.
+    - Editing an existing draft.
+    - Viewing sent emails (non-editable mode).
+  - Fields: Recipient email(s), Subject, Body.
+  - Save draft locally.
+  - Send email via SendGrid API.
+- **Email Sending:**
+  - Integrated with a Node.js backend using SendGrid.
+  - Updates the draft status upon successful sending.
+  - Displays confirmation messages.
+- **Error Handling:**
+  - Gracefully handles API errors.
+- **Logout Feature:**
+  - Clears user data (simulated authentication).
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### 🎯 Bonus Features
+- **Dropdown Filter for Emails:** Added a dropdown in the header to filter emails (Sent/Draft).
+- **Single Dynamic Screen for Create/Edit/View:** The Email Editor screen adapts based on use case.
+- **Search Bar:** Implemented a search bar for filtering emails by subject or recipient.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+---
 
+## 🛠️ Tech Stack
+- **Framework:** React Native (Latest Version)
+- **Language:** TypeScript
+- **State Management:** Redux Toolkit
+- **Navigation:** React Navigation
+- **Storage:** AsyncStorage
+- **Form Handling:** React Hook Form
+- **API:** SendGrid (integrated with Node.js backend)
+
+---
+
+## 🔧 Setup & Installation
+
+### 1️⃣ Prerequisites
+Ensure you have the following installed:
+- [Node.js](https://nodejs.org/)
+- [React Native CLI](https://reactnative.dev/docs/environment-setup)
+- Yarn or npm
+- Android Emulator or a Physical Device
+
+### 2️⃣ Clone the Repository
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+ git clone https://github.com/sk-py/VSS-Task.git
+ cd email-client
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
+### 3️⃣ Install Dependencies
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+npm install
+# or
+yarn install
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
+### 4️⃣ Start the Application
 ```sh
-bundle install
+# Start Metro Bundler
+npm start  # or yarn start
+
+# Run on Android
+yarn android  # or npm run android
+
+# Run on iOS (Mac required)
+bundle install  # First-time only
+bundle exec pod install  # After updating native deps
+yarn ios  # or npm run ios
 ```
 
-Then, and every time you update your native dependencies, run:
+---
 
-```sh
-bundle exec pod install
-```
+## ⚙️ Assumptions & Challenges
+### ✅ Assumptions
+- Added a dropdown for filtering emails (Sent/Draft).
+- Used a single screen to handle Create, Edit, and View functionalities dynamically.
+- Redux state and AsyncStorage are used for syncing UI and storage.
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+### ❌ Challenges Faced
+- **Managing a single screen for Create, Edit, and View:** Had to dynamically adjust UI and functionality.
+- **Syncing Redux with AsyncStorage:** Ensured state updates reflect correctly in local storage.
+- **SendGrid Integration:** Configuring email sending with an existing Node.js backend.
 
-```sh
-# Using npm
-npm run ios
+---
 
-# OR using Yarn
-yarn ios
-```
+## 📽️ Demo Video
+[Watch Demo](https://drive.google.com/file/d/1nUjNscb0FUei1ofPetGli6iMIai-2f0-/view?usp=drivesdk)
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 📥 Download APK
+You can download and install the app using the following link:
+[Download APK](https://drive.google.com/file/d/1VAoJMcn3Elqx3l3Lmksh1C40zzJeqIvE/view?usp=drive_web)
 
-## Step 3: Modify your app
+---
 
-Now that you have successfully run the app, let's make changes!
+## 📢 Feedback
+Your feedback is valuable! If you have any suggestions, improvements, or issues, feel free to reach out.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+📩 Contact us at: [shaikh56742@gmail.com](mailto:shaikh56742@gmail.com)
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+I appreciate your time in testing and reviewing is app. Let me know what you think!
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
