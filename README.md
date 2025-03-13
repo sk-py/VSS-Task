@@ -109,7 +109,7 @@ yarn ios  # or npm run ios
 
 ## 📥 Download APK
 You can download and install the app using the following link:
-[Download APK](sandbox:/mnt/data/app-release.apk)
+[Download APK](https://drive.google.com/file/d/1VAoJMcn3Elqx3l3Lmksh1C40zzJeqIvE/view?usp=drive_web)
 
 ---
 
