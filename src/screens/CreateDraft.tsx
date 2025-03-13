@@ -194,7 +194,7 @@ const CreateDraft = () => {
       fontSize: wp(4),
       color: '#000000',
       backgroundColor: '#FFFFFF',
-      shadowColor: 'grey',
+      shadowColor: 'lightgrey', 
       ...Platform.select({
         ios: {
           shadowOffset: { width: 0, height: 1 },
@@ -220,7 +220,8 @@ const CreateDraft = () => {
       flexDirection: 'row',
       justifyContent: 'space-between',
       paddingHorizontal: wp(5),
-      paddingVertical: hp(2),
+      paddingVertical: hp(1.4),
+      paddingBottom: hp(4),
       borderTopWidth: 1,
       borderTopColor: '#E9ECEF',
       backgroundColor: '#FFFFFF',
